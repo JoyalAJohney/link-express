@@ -14,7 +14,7 @@ const Header = () => {
             <div className="w-8 h-8 bg-linkedin-blue rounded flex items-center justify-center">
               <span className="text-white font-bold text-sm">in</span>
             </div>
-            <span className="font-bold text-lg hidden sm:block">LinkedIn</span>
+            <span className="font-bold text-lg hidden sm:block">LinkedOut</span>
           </div>
           
           <div className="relative flex-1 max-w-md">
