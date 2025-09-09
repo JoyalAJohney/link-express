@@ -41,31 +41,45 @@ const Feed = () => {
         .select(`
           *,
           post_likes(user_id),
-          post_comments(id, content, user_id, created_at),
-          profiles(display_name, avatar_url)
+          post_comments(id, content, user_id, created_at)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedPosts: Post[] = (postsData || []).map(post => ({
-        id: post.id,
-        user_id: post.user_id,
-        author: {
-          name: (post.profiles && post.profiles[0]?.display_name) || 'Anonymous User',
-          title: 'User',
-          avatar: (post.profiles && post.profiles[0]?.avatar_url) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
-          verified: false,
-        },
-        content: post.content,
-        image: post.image_url,
-        likes: post.post_likes?.length || 0,
-        comments: post.post_comments?.length || 0,
-        shares: post.shares_count,
-        timeAgo: formatTimeAgo(new Date(post.created_at)),
-        liked: user ? post.post_likes?.some((like: any) => like.user_id === user.id) : false,
-        isOwner: user ? post.user_id === user.id : false,
-      }));
+      // Fetch profiles for all unique user IDs
+      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds);
+
+      // Create a map for quick profile lookup
+      const profilesMap = new Map(
+        profilesData?.map(profile => [profile.id, profile]) || []
+      );
+
+      const formattedPosts: Post[] = (postsData || []).map(post => {
+        const profile = profilesMap.get(post.user_id);
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          author: {
+            name: profile?.display_name || 'Anonymous User',
+            title: 'User',
+            avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
+            verified: false,
+          },
+          content: post.content,
+          image: post.image_url,
+          likes: post.post_likes?.length || 0,
+          comments: post.post_comments?.length || 0,
+          shares: post.shares_count,
+          timeAgo: formatTimeAgo(new Date(post.created_at)),
+          liked: user ? post.post_likes?.some((like: any) => like.user_id === user.id) : false,
+          isOwner: user ? post.user_id === user.id : false,
+        };
+      });
 
       setPosts(formattedPosts);
     } catch (error: any) {
