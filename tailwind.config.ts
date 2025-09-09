@@ -57,6 +57,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        linkedin: {
+          blue: "hsl(var(--linkedin-blue))",
+          "light-blue": "hsl(var(--linkedin-light-blue))",
+          gray: "hsl(var(--linkedin-gray))",
+          "light-gray": "hsl(var(--linkedin-light-gray))",
+          "dark-gray": "hsl(var(--linkedin-dark-gray))",
+          green: "hsl(var(--linkedin-green))",
+          red: "hsl(var(--linkedin-red))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
