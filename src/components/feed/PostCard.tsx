@@ -1,9 +1,10 @@
-import { Heart, MessageCircle, Share, MoreHorizontal, ThumbsUp, Send } from "lucide-react";
+import { Heart, MessageCircle, Share, MoreHorizontal, ThumbsUp, Send, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 interface PostCardProps {
   post: {
     id: string;
+    user_id: string;
     author: {
       name: string;
       title: string;
@@ -24,6 +26,7 @@ interface PostCardProps {
     shares: number;
     timeAgo: string;
     liked?: boolean;
+    isOwner?: boolean;
   };
   onPostUpdate?: () => void;
 }
@@ -90,7 +93,8 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           id,
           content,
           created_at,
-          user_id
+          user_id,
+          profiles(display_name, avatar_url)
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
@@ -99,6 +103,30 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
       setComments(data || []);
     } catch (error: any) {
       console.error('Error fetching comments:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+
+      onPostUpdate?.();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -147,6 +175,31 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('post_comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Comment deleted",
+        description: "Your comment has been deleted successfully.",
+      });
+
+      fetchComments();
+      onPostUpdate?.();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to delete comment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleComments = () => {
     setShowComments(!showComments);
     if (!showComments) {
@@ -185,9 +238,21 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               <p className="text-xs text-muted-foreground">{post.timeAgo}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {post.isOwner && (
+                <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Post
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       
@@ -278,33 +343,76 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
 
               {/* Comments List */}
               <div className="space-y-3">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="bg-muted rounded-lg px-3 py-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-sm">
-                            Anonymous User
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatTimeAgo(comment.created_at)}
-                          </span>
+                {comments.map((comment) => {
+                  const displayName = (comment.profiles && comment.profiles[0]?.display_name) || 'Anonymous User';
+                  const avatarUrl = (comment.profiles && comment.profiles[0]?.avatar_url) || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face";
+                  
+                  return (
+                    <div key={comment.id} className="flex space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={avatarUrl} />
+                        <AvatarFallback>
+                          {displayName.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="bg-muted rounded-lg px-3 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-sm">
+                                {displayName}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatTimeAgo(comment.created_at)}
+                              </span>
+                            </div>
+                            <CommentDeleteButton 
+                              comment={comment} 
+                              onDelete={handleDeleteComment}
+                            />
+                          </div>
+                          <p className="text-sm mt-1">{comment.content}</p>
                         </div>
-                        <p className="text-sm mt-1">{comment.content}</p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+const CommentDeleteButton = ({ comment, onDelete }: { 
+  comment: any; 
+  onDelete: (commentId: string) => void; 
+}) => {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    getCurrentUser();
+  }, []);
+
+  const isCommentOwner = currentUser && comment.user_id === currentUser.id;
+
+  if (!isCommentOwner) return null;
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onDelete(comment.id)}
+      className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+    >
+      <Trash2 className="h-3 w-3" />
+    </Button>
   );
 };
 

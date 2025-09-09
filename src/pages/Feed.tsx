@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Post {
   id: string;
+  user_id: string;
   author: {
     name: string;
     title: string;
@@ -23,6 +24,7 @@ interface Post {
   shares: number;
   timeAgo: string;
   liked?: boolean;
+  isOwner?: boolean;
 }
 
 const Feed = () => {
@@ -39,7 +41,8 @@ const Feed = () => {
         .select(`
           *,
           post_likes(user_id),
-          post_comments(id, content, user_id, created_at)
+          post_comments(id, content, user_id, created_at),
+          profiles(display_name, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -47,10 +50,11 @@ const Feed = () => {
 
       const formattedPosts: Post[] = (postsData || []).map(post => ({
         id: post.id,
+        user_id: post.user_id,
         author: {
-          name: 'Anonymous User', // Will be updated when we have proper user profiles
+          name: (post.profiles && post.profiles[0]?.display_name) || 'Anonymous User',
           title: 'User',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
+          avatar: (post.profiles && post.profiles[0]?.avatar_url) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
           verified: false,
         },
         content: post.content,
@@ -60,6 +64,7 @@ const Feed = () => {
         shares: post.shares_count,
         timeAgo: formatTimeAgo(new Date(post.created_at)),
         liked: user ? post.post_likes?.some((like: any) => like.user_id === user.id) : false,
+        isOwner: user ? post.user_id === user.id : false,
       }));
 
       setPosts(formattedPosts);

@@ -8,8 +8,12 @@ import PostCard from "@/components/feed/PostCard";
 import { mockUser, mockPosts } from "@/data/mockData";
 
 const Profile = () => {
-  // Filter posts by current user (for demo, showing first 3 posts)
-  const userPosts = mockPosts.slice(0, 3);
+  // Filter posts by current user (for demo, showing first 3 posts with required fields)
+  const userPosts = mockPosts.slice(0, 3).map(post => ({
+    ...post,
+    user_id: 'demo-user-id',
+    isOwner: true,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
