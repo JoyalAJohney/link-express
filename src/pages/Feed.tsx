@@ -39,7 +39,7 @@ const Feed = () => {
         .select(`
           *,
           post_likes(user_id),
-          post_comments(id, content, user_id, created_at, profiles(display_name))
+          post_comments(id, content, user_id, created_at)
         `)
         .order('created_at', { ascending: false });
 

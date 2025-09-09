@@ -90,8 +90,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           id,
           content,
           created_at,
-          user_id,
-          profiles(display_name)
+          user_id
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
@@ -283,15 +282,13 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
                   <div key={comment.id} className="flex space-x-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" />
-                      <AvatarFallback>
-                        {comment.profiles?.display_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
+                      <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-muted rounded-lg px-3 py-2">
                         <div className="flex items-center space-x-2">
                           <span className="font-medium text-sm">
-                            {comment.profiles?.display_name || 'Anonymous User'}
+                            Anonymous User
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {formatTimeAgo(comment.created_at)}
