@@ -5,15 +5,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 
-const CreatePost = () => {
+interface CreatePostProps {
+  onPost: (content: string) => void;
+}
+
+const CreatePost = ({ onPost }: CreatePostProps) => {
   const [content, setContent] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   const handlePost = () => {
-    // Handle post creation
-    console.log("Creating post:", content);
-    setContent("");
-    setShowForm(false);
+    if (content.trim()) {
+      onPost(content.trim());
+      setContent("");
+      setShowForm(false);
+    }
   };
 
   return (
