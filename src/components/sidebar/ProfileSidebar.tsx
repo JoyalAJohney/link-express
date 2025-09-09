@@ -18,7 +18,7 @@ const ProfileSidebar = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-8 text-center">
-          <h3 className="font-semibold">John Doe</h3>
+          <h3 className="font-semibold">Joyal</h3>
           <p className="text-sm text-muted-foreground">Full Stack Developer</p>
           
           <div className="mt-4 space-y-2">
