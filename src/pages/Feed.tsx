@@ -5,7 +5,7 @@ import PostCard from "@/components/feed/PostCard";
 import ProfileSidebar from "@/components/sidebar/ProfileSidebar";
 import NewsSidebar from "@/components/sidebar/NewsSidebar";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface Post {
   id: string;
