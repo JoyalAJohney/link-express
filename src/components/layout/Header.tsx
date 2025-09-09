@@ -1,10 +1,36 @@
-import { Search, Home, Users, MessageSquare, Bell, User, Menu } from "lucide-react";
+import { Search, Home, Users, MessageSquare, Bell, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully.",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <header className="linkedin-nav px-4 py-3">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -35,15 +61,25 @@ const Header = () => {
             <NavItem icon={<Bell className="h-5 w-5" />} label="Notifications" badge="3" />
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Avatar className="h-8 w-8 cursor-pointer">
-              <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              Me
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center space-x-2 cursor-pointer">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" />
+                  <AvatarFallback>JD</AvatarFallback>
+                </Avatar>
+                <Button variant="ghost" size="sm" className="hidden sm:flex">
+                  Me
+                </Button>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
