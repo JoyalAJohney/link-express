@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
 import ProfileSidebar from "@/components/sidebar/ProfileSidebar";
 import NewsSidebar from "@/components/sidebar/NewsSidebar";
-import { mockPosts, mockUser } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Post {
   id: string;
@@ -24,26 +25,101 @@ interface Post {
 }
 
 const Feed = () => {
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const handleNewPost = (content: string) => {
-    const newPost: Post = {
-      id: Date.now().toString(),
-      author: {
-        name: mockUser.name,
-        title: mockUser.title,
-        avatar: mockUser.avatar,
-        verified: false,
-      },
-      content,
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      timeAgo: "now",
-      liked: false,
-    };
-    setPosts([newPost, ...posts]);
+  const fetchPosts = async () => {
+    try {
+      const { data: postsData, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedPosts: Post[] = (postsData || []).map(post => ({
+        id: post.id,
+        author: {
+          name: 'Anonymous User', // Will be updated when we have proper user profiles
+          title: 'User',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face',
+          verified: false,
+        },
+        content: post.content,
+        image: post.image_url,
+        likes: post.likes_count,
+        comments: post.comments_count,
+        shares: post.shares_count,
+        timeAgo: formatTimeAgo(new Date(post.created_at)),
+        liked: false,
+      }));
+
+      setPosts(formattedPosts);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch posts. You may need to sign in first.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    return `${Math.floor(diffInSeconds / 86400)}d`;
+  };
+
+  const handleNewPost = async (content: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to create a post.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .insert([
+          {
+            user_id: user.id,
+            content: content,
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Post created successfully!",
+      });
+
+      // Refresh posts to show the new post
+      fetchPosts();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
