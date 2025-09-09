@@ -32,9 +32,15 @@ const Feed = () => {
 
   const fetchPosts = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data: postsData, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          *,
+          post_likes(user_id),
+          post_comments(id, content, user_id, created_at, profiles(display_name))
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -49,11 +55,11 @@ const Feed = () => {
         },
         content: post.content,
         image: post.image_url,
-        likes: post.likes_count,
-        comments: post.comments_count,
+        likes: post.post_likes?.length || 0,
+        comments: post.post_comments?.length || 0,
         shares: post.shares_count,
         timeAgo: formatTimeAgo(new Date(post.created_at)),
-        liked: false,
+        liked: user ? post.post_likes?.some((like: any) => like.user_id === user.id) : false,
       }));
 
       setPosts(formattedPosts);
@@ -120,6 +126,34 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPosts();
+
+    // Set up real-time subscriptions for likes and comments
+    const likesChannel = supabase
+      .channel('post_likes_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'post_likes'
+      }, () => {
+        fetchPosts(); // Refresh posts when likes change
+      })
+      .subscribe();
+
+    const commentsChannel = supabase
+      .channel('post_comments_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'post_comments'
+      }, () => {
+        fetchPosts(); // Refresh posts when comments change
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(commentsChannel);
+    };
   }, []);
 
   return (
@@ -142,7 +176,7 @@ const Feed = () => {
               
               <div className="space-y-4">
                 {posts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard key={post.id} post={post} onPostUpdate={fetchPosts} />
                 ))}
               </div>
             </div>
