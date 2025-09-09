@@ -14,38 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          room_id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          room_id: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          room_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       posts: {
         Row: {
           comments_count: number
@@ -105,62 +73,6 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      room_members: {
-        Row: {
-          id: string
-          joined_at: string
-          room_id: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          joined_at?: string
-          room_id: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          joined_at?: string
-          room_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "room_members_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rooms: {
-        Row: {
-          code: string
-          created_at: string
-          created_by: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          created_by: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          name?: string
           updated_at?: string
         }
         Relationships: []
