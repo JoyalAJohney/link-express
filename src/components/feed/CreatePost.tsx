@@ -55,15 +55,15 @@ const CreatePost = ({ onPost }: CreatePostProps) => {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center space-x-4 overflow-x-auto">
                 <PostOption icon={<Image className="h-5 w-5" />} label="Photo" color="text-linkedin-blue" />
                 <PostOption icon={<Video className="h-5 w-5" />} label="Video" color="text-linkedin-green" />
                 <PostOption icon={<Calendar className="h-5 w-5" />} label="Event" color="text-orange-500" />
                 <PostOption icon={<FileText className="h-5 w-5" />} label="Article" color="text-linkedin-red" />
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <Button 
                   variant="outline" 
                   size="sm"
